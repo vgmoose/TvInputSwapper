@@ -81,7 +81,7 @@ class AccessibilityService : AccessibilityService(), Runnable {
                 // mute down received, start a timer to change the input
                 inputSwitchingHandler.postDelayed(this, timeToHold)
                 startedTimer = true;
-                return true
+                return false
             } else if (action == KeyEvent.ACTION_UP) {
                 Log.v(TAG, "Got mute key up!")
                 // mute release received, stop our timer
@@ -89,7 +89,7 @@ class AccessibilityService : AccessibilityService(), Runnable {
                     inputSwitchingHandler.removeCallbacksAndMessages(null)
                 }
                 startedTimer = false
-                return true
+                return false
             }
         }
         return false
