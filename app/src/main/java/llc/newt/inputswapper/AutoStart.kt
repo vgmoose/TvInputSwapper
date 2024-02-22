@@ -3,12 +3,14 @@ package llc.newt.inputswapper
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.util.Log
 
 class AutoStart : BroadcastReceiver() {
     override fun onReceive(context: Context, arg1: Intent?) {
         val intent = Intent(context, AccessibilityService::class.java)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent)
         } else {

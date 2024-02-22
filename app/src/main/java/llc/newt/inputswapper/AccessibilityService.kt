@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+import android.content.IntentFilter
 import android.media.tv.TvInputInfo
 import android.media.tv.TvInputManager
 import android.net.Uri
@@ -32,8 +33,7 @@ class AccessibilityService : AccessibilityService(), Runnable {
     }
 
     override fun onStart(intent: Intent, startId: Int) {
-        Toast.makeText(this, "Started InputSwapper!", Toast.LENGTH_LONG).show();
-        Log.v(TAG, "Started InputSwapper service")
+        // this method doesn't seem to get called
     }
 
     override fun onServiceConnected() {
@@ -43,6 +43,8 @@ class AccessibilityService : AccessibilityService(), Runnable {
 
         Log.d(TAG, "InputSwapper AccessibilityService is connected!")
 
+
+        // enumerate through passthrough inputs
         val tvPassthroughInputs = tvInputManager.tvInputList.filter {
             // only show passthrough inputs of type HDMI
             // TODO: could cycle through all inputs on config
@@ -55,6 +57,30 @@ class AccessibilityService : AccessibilityService(), Runnable {
 
         // save them for later!
         tvInputs = tvPassthroughInputs
+
+
+        // set up volume listener
+        Toast.makeText(this, "Started InputSwapper!", Toast.LENGTH_LONG).show();
+        Log.v(TAG, "Started InputSwapper service")
+
+        // create volume listener
+        val VOLUME_CHANGED_ACTION = "android.media.VOLUME_CHANGED_ACTION"
+        val MUTE_CHANGED_ACTION = "android.media.STREAM_MUTE_CHANGED_ACTION"
+
+        var volumeChangeListener = VolumeChangeListener()
+        // update callback
+        volumeChangeListener.onVolumeChanged = object : Runnable {
+            override fun run() {
+                Log.v(TAG, "Volume changed!")
+                justAdvanceChannel();
+            }
+        }
+
+        var intentFilter = IntentFilter();
+        intentFilter.addAction(VOLUME_CHANGED_ACTION)
+        intentFilter.addAction(MUTE_CHANGED_ACTION)
+
+        applicationContext.registerReceiver(volumeChangeListener, intentFilter)
     }
 
     override fun onAccessibilityEvent(accessibilityEvent: AccessibilityEvent) {
@@ -95,13 +121,11 @@ class AccessibilityService : AccessibilityService(), Runnable {
         return false
     }
 
-    // actually change the input, and reschedule another input changing call
-    override fun run() {
+    fun justAdvanceChannel() {
         val inputSwitchingHandler = this.inputSwitchingHandler?.let { it } ?: return
         val tvInputs = this.tvInputs?.let { it } ?: return
 
-        if (startedTimer && tvInputs.isNotEmpty()) {
-            // make sure we've started the timer, and then change the input
+        if (tvInputs.isNotEmpty()) {
             curInput = (curInput + 1) % tvInputs.size
             val nextInput = tvInputs[curInput]
             Log.v(TAG, "Changing the input to option #$curInput (${nextInput.id}, ${nextInput.type})")
@@ -111,7 +135,17 @@ class AccessibilityService : AccessibilityService(), Runnable {
             val i = Intent(Intent.ACTION_VIEW, Uri.parse("content://android.media.tv/passthrough/${channelSlug}"))
             i.addFlags(FLAG_ACTIVITY_NEW_TASK)
             applicationContext.startActivity(i)
+        }
+    }
 
+    // actually change the input, and reschedule another input changing call
+    override fun run() {
+        val inputSwitchingHandler = this.inputSwitchingHandler?.let { it } ?: return
+        val tvInputs = this.tvInputs?.let { it } ?: return
+
+        if (startedTimer) {
+            justAdvanceChannel();
+            // reschedule another input changing call
             inputSwitchingHandler.postDelayed(this, timeToHold)
         }
     }

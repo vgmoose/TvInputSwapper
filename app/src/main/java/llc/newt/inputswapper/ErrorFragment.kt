@@ -1,5 +1,7 @@
 package llc.newt.inputswapper
 
+import android.content.Context
+import android.content.IntentFilter
 import android.os.Bundle
 import android.view.View
 
@@ -10,7 +12,6 @@ import androidx.leanback.app.ErrorSupportFragment
  * This class demonstrates how to extend [ErrorSupportFragment].
  */
 class ErrorFragment : ErrorSupportFragment() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         title = resources.getString(R.string.app_name)

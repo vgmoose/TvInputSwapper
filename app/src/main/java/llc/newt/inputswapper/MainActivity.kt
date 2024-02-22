@@ -2,7 +2,9 @@ package llc.newt.inputswapper
 
 import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -29,13 +31,17 @@ class MainActivity : FragmentActivity() {
 //            this.startActivity(intent)
 
             // create volume listener
-//            applicationContext
-//                .contentResolver
-//                .registerContentObserver(
-//                    android.provider.Settings.System.CONTENT_URI,
-//                    true,
-//                    VolumeObserver(this, errFrag)
-//                );
+            val VOLUME_CHANGED_ACTION = "android.media.VOLUME_CHANGED_ACTION"
+            val MUTE_CHANGED_ACTION = "android.media.STREAM_MUTE_CHANGED_ACTION"
+
+            var volumeChangeListener = VolumeChangeListener()
+            var intentFilter = IntentFilter();
+            intentFilter.addAction(VOLUME_CHANGED_ACTION)
+            intentFilter.addAction(MUTE_CHANGED_ACTION)
+
+            Log.v("ANYTHING", "probably not")
+            applicationContext.registerReceiver(volumeChangeListener, intentFilter)
+
         }
         errFrag.setVolume(-1, false)
     }
